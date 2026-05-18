@@ -14,7 +14,7 @@ const loadingTitle = document.querySelector("[data-loading-title]");
 const loadingEyebrow = document.querySelector("[data-loading-eyebrow]");
 const loadingMessage = document.querySelector("[data-loading-message]");
 const loadingQuery = document.querySelector("[data-loading-query]");
-const aiListingStatus = document.querySelector("[data-ai-listing-status]");
+const aiListingStatuses = document.querySelectorAll("[data-ai-listing-status]");
 const reviewedParts = document.querySelector("[data-reviewed-parts]");
 const uploadedPreview = document.querySelector("[data-uploaded-preview]");
 const uploadedCount = document.querySelector("[data-uploaded-count]");
@@ -115,10 +115,12 @@ uploadBoxes.forEach((uploadBox) => {
 });
 
 const setAiListingStatus = (message, isError = false) => {
-  if (!aiListingStatus) return;
+  if (!aiListingStatuses.length) return;
 
-  aiListingStatus.textContent = message || "";
-  aiListingStatus.classList.toggle("is-error", isError);
+  aiListingStatuses.forEach((status) => {
+    status.textContent = message || "";
+    status.classList.toggle("is-error", isError);
+  });
 };
 
 const formatAiValue = (value, fallback = "-") => {
