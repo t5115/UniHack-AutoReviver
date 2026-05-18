@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AutoReviver — AI Part Listing</title>
+    <link rel="stylesheet" href="aiListing.css" />
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <span class="logo">AutoReviver</span>
+        <span class="tagline">AI-powered UK car parts listings</span>
+      </div>
+    </header>
+
+    <main>
+      <section class="upload-panel">
+        <h1>Generate a Part Listing</h1>
+        <p class="subtitle">Upload a photo of your part and we'll create a professional marketplace listing instantly.</p>
+
+        <form id="analyzeForm">
+          <div id="dropZone" class="drop-zone">
+            <input type="file" id="imageInput" accept="image/*" hidden />
+            <div class="drop-inner" id="dropInner">
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+              <p>Drag &amp; drop an image here, or <button type="button" id="browseBtn">browse</button></p>
+              <span class="hint">JPG, PNG, WEBP — max 10 MB</span>
+            </div>
+            <img id="preview" class="preview hidden" alt="Part preview" />
+          </div>
+
+          <div class="fields">
+            <div class="field">
+              <label for="partNumber">Part Number <span class="optional">(optional)</span></label>
+              <input type="text" id="partNumber" placeholder="e.g. 1234567, 3C0857521A" />
+            </div>
+            <div class="field">
+              <label for="donorReg">Donor Vehicle Reg <span class="optional">(optional)</span></label>
+              <input type="text" id="donorReg" placeholder="e.g. AB12 CDE" />
+            </div>
+          </div>
+
+          <button type="submit" id="analyzeBtn" disabled>Analyse Part</button>
+        </form>
+      </section>
+
+      <section id="resultSection" class="result-panel hidden">
+        <div class="result-header">
+          <h2 id="resultTitle"></h2>
+          <span id="confidenceBadge" class="badge"></span>
+        </div>
+
+        <p id="resultDescription" class="result-desc"></p>
+
+        <div class="result-grid">
+          <div class="result-card">
+            <span class="card-label">Category</span>
+            <span id="resultCategory" class="card-value"></span>
+          </div>
+          <div class="result-card">
+            <span class="card-label">Part Type</span>
+            <span id="resultPartType" class="card-value"></span>
+          </div>
+          <div class="result-card">
+            <span class="card-label">Side</span>
+            <span id="resultSide" class="card-value"></span>
+          </div>
+          <div class="result-card">
+            <span class="card-label">Condition</span>
+            <span id="resultCondition" class="card-value"></span>
+          </div>
+          <div class="result-card full">
+            <span class="card-label">Condition Notes</span>
+            <span id="resultConditionNotes" class="card-value"></span>
+          </div>
+          <div class="result-card full">
+            <span class="card-label">Part Number</span>
+            <span id="resultPartNumber" class="card-value"></span>
+          </div>
+        </div>
+
+        <div class="vehicles-section">
+          <h3>Compatible Vehicles</h3>
+          <ul id="vehicleList" class="vehicle-list"></ul>
+        </div>
+
+        <button id="resetBtn" class="reset-btn">Analyse Another Part</button>
+      </section>
+
+      <div id="errorBox" class="error-box hidden"></div>
+    </main>
+
+    <script src="aiListing.js"></script>
+  </body>
+</html>
