@@ -1,4 +1,6 @@
 node_modules/
 data/autoreviver.sqlite
+data/autoreviver.sqlite-shm
+data/autoreviver.sqlite-wal
 .env
 *.log
