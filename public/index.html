@@ -4,9 +4,307 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AutoReviver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
+    <header class="site-header">
+      <nav class="navbar" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="AutoReviver homepage">
+          <span class="brand-mark">A</span>
+          <span>AutoReviver</span>
+        </a>
+
+        <div class="nav-actions">
+          <a href="#login" class="nav-login">Login</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-media" aria-hidden="true"></div>
+
+        <div class="hero-content">
+          <section class="parts-panel" aria-labelledby="hero-title">
+            <div class="panel-tabs" role="tablist" aria-label="Parts actions">
+              <button class="panel-tab is-active" type="button" data-panel-target="find">Find a part</button>
+              <button class="panel-tab" type="button" data-panel-target="list">List a part</button>
+            </div>
+
+            <form class="parts-form is-active" data-panel="find" aria-label="Find compatible car parts">
+              <div class="finder-header">
+                <div>
+                  <h1 id="hero-title">Find the right part</h1>
+                  <p>Use a plate number, part details, or a photo.</p>
+                </div>
+              </div>
+
+              <div class="search-grid">
+                <label class="field">
+                  <span>Part description</span>
+                  <input
+                    type="text"
+                    name="part"
+                    placeholder="e.g. 2018 Ford Focus headlight"
+                    autocomplete="off"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Plate number</span>
+                  <input
+                    type="text"
+                    name="plate"
+                    placeholder="e.g. AB12 CDE"
+                    autocomplete="off"
+                  />
+                </label>
+              </div>
+
+              <details class="advanced-filters">
+                <summary>Advanced filters</summary>
+                <div class="advanced-grid">
+                  <label class="field">
+                    <span>Brand</span>
+                    <input type="text" name="brand" list="brand-options" placeholder="e.g. Ford" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Model</span>
+                    <input type="text" name="model" list="model-options" placeholder="e.g. Focus" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Part number</span>
+                    <input type="text" name="partNumber" placeholder="e.g. 8V0 941 003" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>VIN</span>
+                    <input type="text" name="vin" placeholder="e.g. WBA8E9G55JNU12345" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Colour</span>
+                    <input type="text" name="colour" list="colour-options" placeholder="e.g. Blue" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Engine size</span>
+                    <input type="text" name="engine-size" list="engine-size-options" placeholder="e.g. 1.6L" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Location</span>
+                    <input type="text" name="location" placeholder="e.g. Birmingham" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Search radius</span>
+                    <select name="radius">
+                      <option value="5">Within 5 miles from me</option>
+                      <option value="25">Within 25 miles from me</option>
+                      <option value="50">Within 50 miles from me</option>
+                      <option value="100">Within 100 miles from me</option>
+                      <option value="national">Nationwide</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
+
+              <label class="upload-box" for="find-part-image">
+                <input id="find-part-image" name="part-image" type="file" accept="image/*" />
+                <span class="upload-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img">
+                    <path d="M12 16V5m0 0 4 4m-4-4L8 9" />
+                    <path d="M20 16.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.5" />
+                  </svg>
+                </span>
+                <span class="upload-title">Upload or drag a part image</span>
+                <span class="upload-copy">JPG, PNG, or WebP. Best with a clear photo of the part.</span>
+                <span class="file-name" aria-live="polite"></span>
+              </label>
+
+              <div class="finder-actions">
+                <button class="button button-primary" type="submit">Search parts</button>
+                <button class="text-link" type="button" data-panel-target="list">List a part instead</button>
+              </div>
+            </form>
+
+            <form class="parts-form" data-panel="list" aria-label="List a car part">
+              <div class="finder-header">
+                <div>
+                  <h2>List a part</h2>
+                  <p>Add the vehicle details and upload a clear part photo.</p>
+                </div>
+              </div>
+
+              <div class="search-grid">
+                <label class="field">
+                  <span>Part description</span>
+                  <input
+                    type="text"
+                    name="part"
+                    placeholder="e.g. 2018 Ford Focus headlight"
+                    autocomplete="off"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Part number</span>
+                  <input
+                    type="text"
+                    name="partNumber"
+                    placeholder="e.g. 8V0 941 003"
+                    autocomplete="off"
+                  />
+                </label>
+              </div>
+
+              <details class="advanced-filters">
+                <summary>Advanced filters</summary>
+                <div class="advanced-grid">
+                  <label class="field">
+                    <span>Brand</span>
+                    <input type="text" name="brand" list="brand-options" placeholder="e.g. Ford" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Model</span>
+                    <input type="text" name="model" list="model-options" placeholder="e.g. Focus" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>VIN</span>
+                    <input type="text" name="vin" placeholder="e.g. WBA8E9G55JNU12345" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Colour</span>
+                    <input type="text" name="colour" list="colour-options" placeholder="e.g. Blue" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Engine size</span>
+                    <input type="text" name="engine-size" list="engine-size-options" placeholder="e.g. 1.6L" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Location</span>
+                    <input type="text" name="location" placeholder="e.g. Birmingham" autocomplete="off" />
+                  </label>
+                  <label class="field">
+                    <span>Search radius</span>
+                    <select name="radius">
+                      <option value="5">Within 5 miles from me</option>
+                      <option value="25">Within 25 miles from me</option>
+                      <option value="50">Within 50 miles from me</option>
+                      <option value="100">Within 100 miles from me</option>
+                      <option value="national">Nationwide</option>
+                    </select>
+                  </label>
+                </div>
+              </details>
+
+              <label class="upload-box" for="list-part-image">
+                <input id="list-part-image" name="part-image" type="file" accept="image/*" />
+                <span class="upload-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" role="img">
+                    <path d="M12 16V5m0 0 4 4m-4-4L8 9" />
+                    <path d="M20 16.5V18a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-1.5" />
+                  </svg>
+                </span>
+                <span class="upload-title">Upload or drag a part image</span>
+                <span class="upload-copy">JPG, PNG, or WebP. Best with a clear photo of the part.</span>
+                <span class="file-name" aria-live="polite"></span>
+              </label>
+
+              <div class="finder-actions">
+                <button class="button button-primary" type="submit">List part</button>
+                <button class="text-link" type="button" data-panel-target="find">Search for a part instead</button>
+              </div>
+            </form>
+
+            <datalist id="brand-options">
+              <option value="Audi"></option>
+              <option value="BMW"></option>
+              <option value="Citroen"></option>
+              <option value="Ford"></option>
+              <option value="Honda"></option>
+              <option value="Hyundai"></option>
+              <option value="Jaguar"></option>
+              <option value="Kia"></option>
+              <option value="Land Rover"></option>
+              <option value="Mazda"></option>
+              <option value="Mercedes-Benz"></option>
+              <option value="Mini"></option>
+              <option value="Nissan"></option>
+              <option value="Peugeot"></option>
+              <option value="Renault"></option>
+              <option value="Seat"></option>
+              <option value="Skoda"></option>
+              <option value="Tesla"></option>
+              <option value="Toyota"></option>
+              <option value="Vauxhall"></option>
+              <option value="Volkswagen"></option>
+              <option value="Volvo"></option>
+            </datalist>
+
+            <datalist id="model-options">
+              <option value="1 Series"></option>
+              <option value="3 Series"></option>
+              <option value="A3"></option>
+              <option value="A4"></option>
+              <option value="Astra"></option>
+              <option value="C-Class"></option>
+              <option value="Corsa"></option>
+              <option value="Clio"></option>
+              <option value="Civic"></option>
+              <option value="Fiesta"></option>
+              <option value="Focus"></option>
+              <option value="Golf"></option>
+              <option value="i10"></option>
+              <option value="i20"></option>
+              <option value="Leon"></option>
+              <option value="Megane"></option>
+              <option value="Micra"></option>
+              <option value="Model 3"></option>
+              <option value="Octavia"></option>
+              <option value="Polo"></option>
+              <option value="Qashqai"></option>
+              <option value="Sportage"></option>
+              <option value="Yaris"></option>
+            </datalist>
+
+            <datalist id="colour-options">
+              <option value="Black"></option>
+              <option value="White"></option>
+              <option value="Grey"></option>
+              <option value="Silver"></option>
+              <option value="Blue"></option>
+              <option value="Red"></option>
+              <option value="Green"></option>
+              <option value="Yellow"></option>
+              <option value="Orange"></option>
+              <option value="Brown"></option>
+              <option value="Beige"></option>
+              <option value="Gold"></option>
+            </datalist>
+
+            <datalist id="engine-size-options">
+              <option value="1.0L"></option>
+              <option value="1.2L"></option>
+              <option value="1.4L"></option>
+              <option value="1.5L"></option>
+              <option value="1.6L"></option>
+              <option value="1.8L"></option>
+              <option value="2.0L"></option>
+              <option value="2.2L"></option>
+              <option value="2.5L"></option>
+              <option value="3.0L"></option>
+              <option value="4.0L"></option>
+              <option value="Electric"></option>
+              <option value="Hybrid"></option>
+            </datalist>
+          </section>
+        </div>
+      </section>
+    </main>
+
     <script src="app.js"></script>
   </body>
 </html>

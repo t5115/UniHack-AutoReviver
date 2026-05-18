@@ -6,7 +6,8 @@ const PORT = 3000;
 const publicDir = path.join(__dirname, "public");
 
 const server = http.createServer((req, res) => {
-  const requestedPath = req.url === "/" ? "/index.html" : req.url;
+  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
+  const requestedPath = requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname;
   const filePath = path.join(publicDir, requestedPath);
 
   fs.readFile(filePath, (error, content) => {

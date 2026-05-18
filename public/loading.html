@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Searching | AutoReviver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="navbar" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="AutoReviver homepage">
+          <span class="brand-mark">A</span>
+          <span>AutoReviver</span>
+        </a>
+      </nav>
+    </header>
+
+    <main class="loading-page" aria-labelledby="loading-title">
+      <section class="loading-shell">
+        <div class="loading-panel">
+          <div class="loading-copy">
+            <p class="eyebrow" data-loading-eyebrow>Matching inventory</p>
+            <h1 id="loading-title" data-loading-title>Finding the right parts</h1>
+            <p data-loading-message>
+              Checking vehicle details, part descriptions, and compatible listings.
+            </p>
+          </div>
+
+          <div class="loading-query-card" aria-live="polite">
+            <span>Using your details</span>
+            <strong data-loading-query>Part search</strong>
+          </div>
+
+          <div class="scanner-stage" aria-hidden="true">
+            <div class="scanner-card scanner-card-one">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="scanner-card scanner-card-two">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="scanner-card scanner-card-three">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="scanner-beam"></div>
+            <div class="scanner-node scanner-node-one"></div>
+            <div class="scanner-node scanner-node-two"></div>
+            <div class="scanner-node scanner-node-three"></div>
+          </div>
+
+          <div class="loading-steps" aria-label="Search progress">
+            <span class="is-active">Reading request</span>
+            <span>Checking compatibility</span>
+            <span>Preparing results</span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
