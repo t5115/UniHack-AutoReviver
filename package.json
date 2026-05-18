@@ -4,7 +4,9 @@
   "main": "server.js",
   "scripts": {
     "dev": "node --watch server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev:ai": "node --watch serverAi.js",
+    "start:ai": "node serverAi.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
