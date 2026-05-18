@@ -1,37 +1,25 @@
-const http = require("http");
-const fs = require("fs");
-const path = require("path");
+require("dotenv").config();
 
-const PORT = 3000;
+const express = require("express");
+const path = require("path");
+const { createAiListingRouter } = require("./server/ai-listing/aiListingRoutes");
+const { createListingRouter } = require("./server/listings/listingRoutes");
+const { createPartSearchRouter } = require("./server/part-search/partSearchRoutes");
+
+const app = express();
+const PORT = process.env.PORT || 3000;
 const publicDir = path.join(__dirname, "public");
 
-const server = http.createServer((req, res) => {
-  const requestUrl = new URL(req.url, `http://${req.headers.host}`);
-  const requestedPath = requestUrl.pathname === "/" ? "/index.html" : requestUrl.pathname;
-  const filePath = path.join(publicDir, requestedPath);
+app.use(express.json({ limit: "8mb" }));
+app.use(express.static(publicDir));
+app.use("/api", createAiListingRouter());
+app.use("/api", createPartSearchRouter());
+app.use("/api", createListingRouter());
 
-  fs.readFile(filePath, (error, content) => {
-    if (error) {
-      res.writeHead(404, { "Content-Type": "text/plain" });
-      res.end("Not found");
-      return;
-    }
-
-    res.writeHead(200, { "Content-Type": getContentType(filePath) });
-    res.end(content);
-  });
+app.use((req, res) => {
+  res.status(404).type("text/plain").send("Not found");
 });
 
-server.listen(PORT, () => {
+app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
-
-function getContentType(filePath) {
-  const extension = path.extname(filePath);
-
-  if (extension === ".css") return "text/css";
-  if (extension === ".js") return "text/javascript";
-  if (extension === ".html") return "text/html";
-
-  return "text/plain";
-}

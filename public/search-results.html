@@ -114,18 +114,6 @@
                 </label>
 
                 <label class="field">
-                  <span>Maximum price</span>
-                  <input
-                    type="number"
-                    name="maxPrice"
-                    data-search-field="maxPrice"
-                    min="0"
-                    step="5"
-                    placeholder="e.g. 150"
-                  />
-                </label>
-
-                <label class="field">
                   <span>Location</span>
                   <input
                     type="text"
@@ -175,9 +163,6 @@
                   <span>Sort results</span>
                   <select name="sortBy" data-search-field="sortBy">
                     <option value="bestMatch">Best match</option>
-                    <option value="priceLow">Price: low to high</option>
-                    <option value="priceHigh">Price: high to low</option>
-                    <option value="distance">Distance</option>
                     <option value="newest">Newest</option>
                   </select>
                 </label>
@@ -206,8 +191,8 @@
               <div class="active-filter-list" data-active-filters></div>
               <div class="listing-results" data-listing-results></div>
               <p class="empty-results" data-empty-results hidden>
-                No listings match those filters yet. Try widening the radius or
-                removing a detail.
+                No saved listings match those filters yet. Try removing a detail
+                or publish a new listing.
               </p>
             </section>
           </div>

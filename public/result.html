@@ -48,87 +48,22 @@
               </div>
             </div>
 
-            <div class="part-list">
-              <article class="part-row">
-                <div class="part-thumb part-thumb-one" aria-hidden="true"></div>
-                <div class="part-summary">
-                  <h3>Front bumper</h3>
-                  <p>Detected from lower front section of the uploaded image.</p>
-                </div>
-                <button
-                  class="row-action select-part"
-                  type="button"
-                  data-title="Ford Focus front bumper"
-                  data-make="Ford"
-                  data-model="Focus"
-                  data-year="2018"
-                  data-condition="Used, good"
-                  data-location="Birmingham"
-                  data-price="85"
-                  data-notes="Detected from the lower front section of the uploaded image. Check paint code and mounting tabs before publishing."
-                >
-                  SELECT
-                </button>
-              </article>
-
-              <article class="part-row">
-                <div class="part-thumb part-thumb-two" aria-hidden="true"></div>
-                <div class="part-summary">
-                  <h3>Driver side headlight</h3>
-                  <p>Potential match, needs exact trim and lens condition.</p>
-                </div>
-                <button
-                  class="row-action select-part"
-                  type="button"
-                  data-title="Ford Focus driver side headlight"
-                  data-make="Ford"
-                  data-model="Focus"
-                  data-year="2018"
-                  data-condition="Used, lens needs checking"
-                  data-location="Birmingham"
-                  data-price="120"
-                  data-notes="Detected near the front driver side. Confirm halogen or LED type and inspect lens marks before publishing."
-                >
-                  SELECT
-                </button>
-              </article>
-
-              <article class="part-row">
-                <div class="part-thumb part-thumb-three" aria-hidden="true"></div>
-                <div class="part-summary">
-                  <h3>Bonnet panel</h3>
-                  <p>Use this row if the photo includes a separate bonnet item.</p>
-                </div>
-                <button
-                  class="row-action select-part"
-                  type="button"
-                  data-title="Ford Focus bonnet panel"
-                  data-make="Ford"
-                  data-model="Focus"
-                  data-year="2018"
-                  data-condition="Used, inspect for dents"
-                  data-location="Birmingham"
-                  data-price="150"
-                  data-notes="Detected as a larger upper body panel. Confirm colour match, hinge points, and visible surface condition."
-                >
-                  SELECT
-                </button>
-              </article>
-            </div>
+            <div class="part-list" data-reviewed-parts></div>
           </section>
 
           <section class="preview-panel" aria-labelledby="preview-title">
             <div class="section-heading">
               <h2 id="preview-title">Uploaded image</h2>
-              <span>1 image</span>
+              <span data-uploaded-count>1 image</span>
             </div>
             <figure class="uploaded-preview">
               <img
+                data-uploaded-preview
                 src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=1200&q=80"
                 alt="Uploaded car parts preview"
               />
             </figure>
-            <div class="photo-meta">
+            <div class="photo-meta" data-photo-meta>
               <span>JPG</span>
               <span>Front angle</span>
               <span>Ready to tag</span>
@@ -144,12 +79,14 @@
           </div>
 
           <form class="result-form" aria-label="Part listing details">
+            <input type="hidden" name="partType" />
             <div class="search-grid">
               <label class="field">
                 <span>Listing title</span>
                 <input
                   type="text"
                   name="title"
+                  required
                   placeholder="e.g. Ford Focus front bumper"
                 />
               </label>
@@ -170,8 +107,24 @@
                 <input type="text" name="condition" placeholder="e.g. Used, good" />
               </label>
               <label class="field">
-                <span>Price</span>
-                <input type="text" name="price" placeholder="e.g. 85" />
+                <span>Part number</span>
+                <input type="text" name="partNumber" placeholder="e.g. 8V0 941 003" />
+              </label>
+              <label class="field">
+                <span>Category</span>
+                <input type="text" name="category" placeholder="e.g. bodywork" />
+              </label>
+              <label class="field">
+                <span>Side</span>
+                <input type="text" name="side" placeholder="e.g. left, right, front" />
+              </label>
+              <label class="field">
+                <span>Colour</span>
+                <input type="text" name="colour" placeholder="e.g. Blue" />
+              </label>
+              <label class="field">
+                <span>Engine size</span>
+                <input type="text" name="engineSize" placeholder="e.g. 1.6L" />
               </label>
               <label class="field">
                 <span>Location</span>
@@ -179,19 +132,12 @@
               </label>
             </div>
 
-            <label class="field field-wide">
-              <span>Notes</span>
-              <textarea
-                name="notes"
-                placeholder="Add any compatibility, marks, damage, or collection notes."
-              ></textarea>
-            </label>
-
             <div class="finder-actions">
               <button class="button button-primary" type="submit">
                 Publish
               </button>
             </div>
+            <p class="ai-listing-status" data-result-status role="status" aria-live="polite"></p>
           </form>
         </section>
       </section>
