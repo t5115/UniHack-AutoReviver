@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Search Results | AutoReviver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="navbar" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="AutoReviver homepage">
+          <span class="brand-mark">A</span>
+          <span>AutoReviver</span>
+        </a>
+      </nav>
+    </header>
+
+    <main class="result-page search-results-page">
+      <section class="result-shell" aria-labelledby="search-results-title">
+        <div class="result-heading">
+          <div>
+            <p class="eyebrow">Available listings</p>
+            <h1 id="search-results-title">Browse matching parts</h1>
+            <p>
+              Edit the search details or tune the filters to narrow live results.
+            </p>
+          </div>
+        </div>
+
+        <form
+          class="search-results-form"
+          data-search-results-form
+          aria-label="Refine part search"
+        >
+          <section class="search-refine-panel" aria-labelledby="refine-title">
+            <div class="section-heading">
+              <div>
+                <h2 id="refine-title">Search details</h2>
+                <p>Change the description at any time to fine tune matches.</p>
+              </div>
+            </div>
+
+            <div class="search-grid">
+              <label class="field">
+                <span>Part description</span>
+                <input
+                  type="text"
+                  name="part"
+                  data-search-field="part"
+                  placeholder="e.g. 2018 Ford Focus headlight"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field">
+                <span>Plate number</span>
+                <input
+                  type="text"
+                  name="plate"
+                  data-search-field="plate"
+                  placeholder="e.g. AB12 CDE"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field">
+                <span>Brand</span>
+                <input
+                  type="text"
+                  name="brand"
+                  data-search-field="brand"
+                  list="brand-options"
+                  placeholder="e.g. Ford"
+                  autocomplete="off"
+                />
+              </label>
+              <label class="field">
+                <span>Model</span>
+                <input
+                  type="text"
+                  name="model"
+                  data-search-field="model"
+                  list="model-options"
+                  placeholder="e.g. Focus"
+                  autocomplete="off"
+                />
+              </label>
+            </div>
+          </section>
+
+          <div class="search-results-layout">
+            <aside class="filters-panel" aria-labelledby="filters-title">
+              <div class="section-heading">
+                <div>
+                  <h2 id="filters-title">Filters</h2>
+                  <p>Results update as you change these.</p>
+                </div>
+              </div>
+
+              <div class="filters-grid">
+                <label class="field">
+                  <span>Condition</span>
+                  <select name="condition" data-search-field="condition">
+                    <option value="">Any condition</option>
+                    <option value="Used">Used</option>
+                    <option value="Refurbished">Refurbished</option>
+                    <option value="New">New</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Maximum price</span>
+                  <input
+                    type="number"
+                    name="maxPrice"
+                    data-search-field="maxPrice"
+                    min="0"
+                    step="5"
+                    placeholder="e.g. 150"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Location</span>
+                  <input
+                    type="text"
+                    name="location"
+                    data-search-field="location"
+                    placeholder="e.g. Birmingham"
+                    autocomplete="off"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Search radius</span>
+                  <select name="radius" data-search-field="radius">
+                    <option value="national">Nationwide</option>
+                    <option value="5">Within 5 miles</option>
+                    <option value="25">Within 25 miles</option>
+                    <option value="50">Within 50 miles</option>
+                    <option value="100">Within 100 miles</option>
+                  </select>
+                </label>
+
+                <label class="field">
+                  <span>Colour</span>
+                  <input
+                    type="text"
+                    name="colour"
+                    data-search-field="colour"
+                    list="colour-options"
+                    placeholder="e.g. Blue"
+                    autocomplete="off"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Engine size</span>
+                  <input
+                    type="text"
+                    name="engineSize"
+                    data-search-field="engineSize"
+                    list="engine-size-options"
+                    placeholder="e.g. 1.6L"
+                    autocomplete="off"
+                  />
+                </label>
+
+                <label class="field">
+                  <span>Sort results</span>
+                  <select name="sortBy" data-search-field="sortBy">
+                    <option value="bestMatch">Best match</option>
+                    <option value="priceLow">Price: low to high</option>
+                    <option value="priceHigh">Price: high to low</option>
+                    <option value="distance">Distance</option>
+                    <option value="newest">Newest</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="finder-actions">
+                <button
+                  class="button button-secondary"
+                  type="button"
+                  data-clear-search-filters
+                >
+                  Clear filters
+                </button>
+              </div>
+            </aside>
+
+            <section class="listings-panel" aria-labelledby="listings-title">
+              <div class="section-heading listings-heading">
+                <div>
+                  <h2 id="listings-title">Listings</h2>
+                  <p data-results-summary>Showing available matches.</p>
+                </div>
+                <span data-results-count>0 results</span>
+              </div>
+
+              <div class="active-filter-list" data-active-filters></div>
+              <div class="listing-results" data-listing-results></div>
+              <p class="empty-results" data-empty-results hidden>
+                No listings match those filters yet. Try widening the radius or
+                removing a detail.
+              </p>
+            </section>
+          </div>
+        </form>
+
+        <datalist id="brand-options">
+          <option value="Audi"></option>
+          <option value="BMW"></option>
+          <option value="Citroen"></option>
+          <option value="Ford"></option>
+          <option value="Honda"></option>
+          <option value="Hyundai"></option>
+          <option value="Jaguar"></option>
+          <option value="Kia"></option>
+          <option value="Land Rover"></option>
+          <option value="Mazda"></option>
+          <option value="Mercedes-Benz"></option>
+          <option value="Mini"></option>
+          <option value="Nissan"></option>
+          <option value="Peugeot"></option>
+          <option value="Renault"></option>
+          <option value="Seat"></option>
+          <option value="Skoda"></option>
+          <option value="Tesla"></option>
+          <option value="Toyota"></option>
+          <option value="Vauxhall"></option>
+          <option value="Volkswagen"></option>
+          <option value="Volvo"></option>
+        </datalist>
+
+        <datalist id="model-options">
+          <option value="1 Series"></option>
+          <option value="3 Series"></option>
+          <option value="A3"></option>
+          <option value="A4"></option>
+          <option value="Astra"></option>
+          <option value="C-Class"></option>
+          <option value="Corsa"></option>
+          <option value="Clio"></option>
+          <option value="Civic"></option>
+          <option value="Fiesta"></option>
+          <option value="Focus"></option>
+          <option value="Golf"></option>
+          <option value="i10"></option>
+          <option value="i20"></option>
+          <option value="Leon"></option>
+          <option value="Megane"></option>
+          <option value="Micra"></option>
+          <option value="Model 3"></option>
+          <option value="Octavia"></option>
+          <option value="Polo"></option>
+          <option value="Qashqai"></option>
+          <option value="Sportage"></option>
+          <option value="Yaris"></option>
+        </datalist>
+
+        <datalist id="colour-options">
+          <option value="Black"></option>
+          <option value="White"></option>
+          <option value="Grey"></option>
+          <option value="Silver"></option>
+          <option value="Blue"></option>
+          <option value="Red"></option>
+          <option value="Green"></option>
+          <option value="Yellow"></option>
+          <option value="Orange"></option>
+          <option value="Brown"></option>
+          <option value="Beige"></option>
+          <option value="Gold"></option>
+        </datalist>
+
+        <datalist id="engine-size-options">
+          <option value="1.0L"></option>
+          <option value="1.2L"></option>
+          <option value="1.4L"></option>
+          <option value="1.5L"></option>
+          <option value="1.6L"></option>
+          <option value="1.8L"></option>
+          <option value="2.0L"></option>
+          <option value="2.2L"></option>
+          <option value="2.5L"></option>
+          <option value="3.0L"></option>
+          <option value="4.0L"></option>
+          <option value="Electric"></option>
+          <option value="Hybrid"></option>
+        </datalist>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
