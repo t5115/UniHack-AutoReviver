@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const Database = require("better-sqlite3");
+const { demoListings } = require("./demoListings");
 
 const dataDir = path.join(__dirname, "..", "..", "data");
 const dbPath = path.join(dataDir, "autoreviver.sqlite");
@@ -28,9 +29,23 @@ db.exec(`
     location TEXT,
     confidence INTEGER,
     image_url TEXT,
+    seed_key TEXT UNIQUE,
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   )
 `);
+
+const ensureSeedKeyColumn = () => {
+  const columns = db.prepare("PRAGMA table_info(listings)").all();
+  const hasSeedKey = columns.some((column) => column.name === "seed_key");
+
+  if (!hasSeedKey) {
+    db.exec("ALTER TABLE listings ADD COLUMN seed_key TEXT");
+  }
+
+  db.exec("CREATE UNIQUE INDEX IF NOT EXISTS listings_seed_key_unique ON listings(seed_key) WHERE seed_key IS NOT NULL");
+};
+
+ensureSeedKeyColumn();
 
 const toNullableString = (value) => {
   if (value === null || value === undefined) return null;
@@ -54,6 +69,7 @@ const normaliseListingInput = (listing = {}) => ({
   location: toNullableString(listing.location),
   confidence: Number.isFinite(Number(listing.confidence)) ? Math.round(Number(listing.confidence)) : null,
   image_url: toNullableString(listing.image_url || listing.imageUrl),
+  seed_key: toNullableString(listing.seed_key || listing.seedKey),
 });
 
 const mapListingRow = (row) => ({
@@ -72,6 +88,7 @@ const mapListingRow = (row) => ({
   location: row.location,
   confidence: row.confidence,
   imageUrl: row.image_url,
+  seedKey: row.seed_key,
   postedAt: row.created_at,
 });
 
@@ -101,7 +118,8 @@ const createListing = (input) => {
         engine_size,
         location,
         confidence,
-        image_url
+        image_url,
+        seed_key
       ) VALUES (
         @title,
         @part_type,
@@ -116,7 +134,8 @@ const createListing = (input) => {
         @engine_size,
         @location,
         @confidence,
-        @image_url
+        @image_url,
+        @seed_key
       )
     `
     )
@@ -135,6 +154,82 @@ const listListings = () =>
     .prepare("SELECT * FROM listings ORDER BY datetime(created_at) DESC, id DESC")
     .all()
     .map(mapListingRow);
+
+const seedDemoListings = () => {
+  const insertListing = db.prepare(`
+    INSERT INTO listings (
+      title,
+      part_type,
+      category,
+      make,
+      model,
+      year,
+      side,
+      condition,
+      part_number,
+      colour,
+      engine_size,
+      location,
+      confidence,
+      image_url,
+      seed_key
+    ) VALUES (
+      @title,
+      @part_type,
+      @category,
+      @make,
+      @model,
+      @year,
+      @side,
+      @condition,
+      @part_number,
+      @colour,
+      @engine_size,
+      @location,
+      @confidence,
+      @image_url,
+      @seed_key
+    )
+  `);
+
+  const updateListing = db.prepare(`
+    UPDATE listings
+    SET
+      title = @title,
+      part_type = @part_type,
+      category = @category,
+      make = @make,
+      model = @model,
+      year = @year,
+      side = @side,
+      condition = @condition,
+      part_number = @part_number,
+      colour = @colour,
+      engine_size = @engine_size,
+      location = @location,
+      confidence = @confidence,
+      image_url = @image_url
+    WHERE seed_key = @seed_key
+  `);
+
+  const findSeededListing = db.prepare("SELECT id FROM listings WHERE seed_key = ?");
+  const saveSeededListing = db.transaction((listings) => {
+    listings.forEach((demoListing) => {
+      const listing = normaliseListingInput(demoListing);
+
+      if (findSeededListing.get(listing.seed_key)) {
+        updateListing.run(listing);
+        return;
+      }
+
+      insertListing.run(listing);
+    });
+  });
+
+  saveSeededListing(demoListings);
+};
+
+seedDemoListings();
 
 module.exports = {
   createListing,

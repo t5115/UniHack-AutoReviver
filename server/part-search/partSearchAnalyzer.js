@@ -2,7 +2,8 @@ const OpenAI = require("openai");
 const { buildPartSearchPrompt } = require("./searchPrompt");
 
 const DEFAULT_MODEL = "gpt-5.1";
-const MAX_AI_CANDIDATES = 30;
+const MAX_AI_CANDIDATES = 45;
+const IMAGE_SEARCH_EXPLORATION_CANDIDATES = 18;
 
 const extractJsonObject = (text) => {
   const cleanedText = String(text || "")
@@ -125,13 +126,30 @@ const scoreListingHeuristically = (listing, searchInput) => {
   };
 };
 
-const getPrefilteredCandidates = (listings, searchInput) => {
+const getPrefilteredCandidates = (listings, searchInput, { hasImage = false } = {}) => {
   const scoredListings = listings
     .map((listing) => scoreListingHeuristically(listing, searchInput))
     .sort((a, b) => b.matchRating - a.matchRating || new Date(b.postedAt) - new Date(a.postedAt));
 
   const hasSearchText = Object.values(searchInput).some(Boolean);
   if (!hasSearchText) return scoredListings.slice(0, MAX_AI_CANDIDATES);
+
+  if (hasImage) {
+    const strongTextMatches = scoredListings.filter((listing) => listing.matchRating > 0);
+    const exploratoryMatches = scoredListings
+      .filter((listing) => listing.matchRating <= 0)
+      .sort((a, b) => new Date(b.postedAt) - new Date(a.postedAt))
+      .slice(0, IMAGE_SEARCH_EXPLORATION_CANDIDATES);
+    const candidatesById = new Map();
+
+    [...strongTextMatches, ...exploratoryMatches, ...scoredListings].forEach((listing) => {
+      if (candidatesById.size < MAX_AI_CANDIDATES && !candidatesById.has(listing.id)) {
+        candidatesById.set(listing.id, listing);
+      }
+    });
+
+    return [...candidatesById.values()];
+  }
 
   const likelyMatches = scoredListings.filter((listing) => listing.matchRating > 0);
   return (likelyMatches.length ? likelyMatches : scoredListings).slice(0, MAX_AI_CANDIDATES);
@@ -163,7 +181,8 @@ const mergeAiMatches = ({ listings, searchInput, aiResult }) => {
 
 const rankListingsWithAi = async ({ searchInput, listings, imageBuffer, mimeType }) => {
   const apiKey = process.env.OPENAI_API_KEY;
-  const candidates = getPrefilteredCandidates(listings, searchInput);
+  const hasImage = Boolean(imageBuffer && mimeType);
+  const candidates = getPrefilteredCandidates(listings, searchInput, { hasImage });
 
   if (!candidates.length) {
     return {
@@ -185,10 +204,11 @@ const rankListingsWithAi = async ({ searchInput, listings, imageBuffer, mimeType
   const prompt = buildPartSearchPrompt({
     searchInput,
     candidates: candidates.map(compactListing),
+    hasImage,
   });
   const content = [{ type: "input_text", text: prompt }];
 
-  if (imageBuffer && mimeType) {
+  if (hasImage) {
     content.push({
       type: "input_image",
       image_url: `data:${mimeType};base64,${imageBuffer.toString("base64")}`,
