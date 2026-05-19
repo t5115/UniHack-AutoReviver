@@ -138,5 +138,6 @@ const listListings = () =>
 
 module.exports = {
   createListing,
+  getListingById,
   listListings,
 };

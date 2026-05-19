@@ -1,5 +1,5 @@
 const express = require("express");
-const { createListing, listListings } = require("./listingDb");
+const { createListing, getListingById, listListings } = require("./listingDb");
 
 const createListingRouter = () => {
   const router = express.Router();
@@ -8,6 +8,23 @@ const createListingRouter = () => {
     res.json({
       success: true,
       data: listListings(),
+    });
+  });
+
+  router.get("/listings/:id", (req, res) => {
+    const listing = getListingById(req.params.id);
+
+    if (!listing) {
+      res.status(404).json({
+        success: false,
+        error: "Listing not found",
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      data: listing,
     });
   });
 

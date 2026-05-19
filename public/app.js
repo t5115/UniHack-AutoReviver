@@ -10,6 +10,17 @@ const resultsSummary = document.querySelector("[data-results-summary]");
 const activeFilters = document.querySelector("[data-active-filters]");
 const emptyResults = document.querySelector("[data-empty-results]");
 const clearSearchFiltersButton = document.querySelector("[data-clear-search-filters]");
+const listingDetail = document.querySelector("[data-listing-detail]");
+const listingDetailTitle = document.querySelector("[data-listing-title]");
+const listingDetailSubtitle = document.querySelector("[data-listing-subtitle]");
+const listingDetailImage = document.querySelector("[data-listing-image]");
+const listingDetailDescription = document.querySelector("[data-listing-description]");
+const listingDetailSpecs = document.querySelector("[data-listing-specs]");
+const listingError = document.querySelector("[data-listing-error]");
+const compatibilityForm = document.querySelector("[data-compatibility-form]");
+const compatibilityResult = document.querySelector("[data-compatibility-result]");
+const plateInput = document.querySelector("[data-plate-input]");
+const vinInput = document.querySelector("[data-vin-input]");
 const loadingTitle = document.querySelector("[data-loading-title]");
 const loadingEyebrow = document.querySelector("[data-loading-eyebrow]");
 const loadingMessage = document.querySelector("[data-loading-message]");
@@ -24,10 +35,13 @@ const listingDraftStorageKey = "autoreviverListingDraft";
 const pendingListingStorageKey = "autoreviverPendingListing";
 const pendingSearchStorageKey = "autoreviverPendingSearch";
 const searchResultsStorageKey = "autoreviverSearchResults";
+const selectedListingStorageKey = "autoreviverSelectedListing";
+const fallbackListingImage = "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=1200&q=80";
 
 let availablePartListings = [];
 let selectedResultPart = null;
 let aiSearchContext = null;
+let activeListingDetail = null;
 
 const setActivePanel = (targetPanel) => {
   panelForms.forEach((form) => {
@@ -121,6 +135,18 @@ const setAiListingStatus = (message, isError = false) => {
     status.textContent = message || "";
     status.classList.toggle("is-error", isError);
   });
+};
+
+const setFormStatus = (form, message, isError = false) => {
+  const status = form?.querySelector("[data-ai-listing-status]");
+
+  if (!status) {
+    setAiListingStatus(message, isError);
+    return;
+  }
+
+  status.textContent = message || "";
+  status.classList.toggle("is-error", isError);
 };
 
 const formatAiValue = (value, fallback = "-") => {
@@ -339,12 +365,12 @@ const prepareListingAnalysis = async (form) => {
   const submitButton = form.querySelector('button[type="submit"]');
 
   if (!image) {
-    setAiListingStatus("Upload a part image first so AI can analyse it.", true);
+    setFormStatus(form, "Upload a part image first so AI can analyse it.", true);
     return;
   }
 
   if (!image.type.startsWith("image/")) {
-    setAiListingStatus("Please upload an image file.", true);
+    setFormStatus(form, "Please upload an image file.", true);
     return;
   }
 
@@ -353,7 +379,7 @@ const prepareListingAnalysis = async (form) => {
     submitButton.textContent = "Opening scanner...";
   }
 
-  setAiListingStatus("Opening scanner...");
+  setFormStatus(form, "Opening scanner...");
 
   try {
     const sourceParams = collectFormSearchParams(form);
@@ -376,7 +402,8 @@ const prepareListingAnalysis = async (form) => {
       sourceParams,
     });
   } catch (error) {
-    setAiListingStatus(
+    setFormStatus(
+      form,
       error.name === "QuotaExceededError"
         ? "That image is too large to pass through the loading page. Try a smaller photo."
         : error.message,
@@ -395,9 +422,20 @@ const preparePartSearch = async (form) => {
   const image = imageInput?.files?.[0];
   const submitButton = form.querySelector('button[type="submit"]');
   const sourceParams = collectFormSearchParams(form);
+  const source = Object.fromEntries(sourceParams.entries());
+  const hasDescription = Boolean(String(source.part || "").trim());
+  const hasPlate = Boolean(String(source.plate || "").trim());
+  const hasSpecificFields = ["brand", "model", "partNumber", "vin", "colour", "engine-size", "location"].some((key) =>
+    Boolean(String(source[key] || "").trim())
+  );
 
   if (image && !image.type.startsWith("image/")) {
-    setAiListingStatus("Please upload an image file.", true);
+    setFormStatus(form, "Please upload an image file.", true);
+    return;
+  }
+
+  if (!image && !hasDescription && !hasPlate && !hasSpecificFields) {
+    setFormStatus(form, "Add a part description or upload a photo to search.", true);
     return;
   }
 
@@ -409,7 +447,7 @@ const preparePartSearch = async (form) => {
   try {
     const pendingSearch = {
       createdAt: new Date().toISOString(),
-      source: Object.fromEntries(sourceParams.entries()),
+      source,
       image: image
         ? {
             name: image.name,
@@ -423,6 +461,7 @@ const preparePartSearch = async (form) => {
     const queryString = sourceParams.toString();
     const nextPath = queryString ? `search-results.html?${queryString}` : "search-results.html";
 
+    setFormStatus(form, "Searching current listings...");
     sessionStorage.setItem(pendingSearchStorageKey, JSON.stringify(pendingSearch));
     sessionStorage.removeItem(searchResultsStorageKey);
     window.location.href = buildLoadingUrl({
@@ -431,7 +470,8 @@ const preparePartSearch = async (form) => {
       sourceParams,
     });
   } catch (error) {
-    setAiListingStatus(
+    setFormStatus(
+      form,
       error.name === "QuotaExceededError"
         ? "That image is too large to search through the loading page. Try a smaller photo."
         : error.message,
@@ -706,6 +746,358 @@ const escapeHtml = (value) =>
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#039;");
 
+const normalisePlate = (plate) => String(plate || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+const normaliseVin = (vin) => String(vin || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+const normalisePartNumber = (partNumber) => String(partNumber || "").replace(/[^a-z0-9]/gi, "").toUpperCase();
+const formatPlateDisplay = (plate) => {
+  const normalisedPlate = normalisePlate(plate);
+  return normalisedPlate.length > 4 ? `${normalisedPlate.slice(0, 4)} ${normalisedPlate.slice(4)}` : normalisedPlate;
+};
+
+const seatLeonFitmentRecord = {
+  registration: "LN65 EWD",
+  vin: "VSSZZZKL1RR090386",
+  make: "Seat",
+  model: "Leon",
+  year: "2015",
+  generation: "5F / Mk3",
+  engineSize: "1.2L",
+  engine: "1.2 TSI petrol",
+  fuel: "Petrol",
+  body: "Hatchback",
+  colour: "Silver",
+  fittedParts: [
+    {
+      name: "Front left headlight assembly",
+      partType: "headlight",
+      category: "lighting",
+      side: "Left",
+      partNumbers: ["5F2941005C", "5F2941005D"],
+    },
+    {
+      name: "Front right headlight assembly",
+      partType: "headlight",
+      category: "lighting",
+      side: "Right",
+      partNumbers: ["5F2941006C", "5F2941006D"],
+    },
+    {
+      name: "Front bumper cover",
+      partType: "front bumper",
+      category: "body panel",
+      side: "Front",
+      partNumbers: ["5F0807217GRU", "5F0807217H"],
+    },
+    {
+      name: "Left door mirror",
+      partType: "wing mirror",
+      category: "mirror",
+      side: "Left",
+      partNumbers: ["5F1857507", "5F1857507K9B9"],
+    },
+    {
+      name: "1.2 TSI ignition coil",
+      partType: "ignition coil",
+      category: "engine",
+      side: "",
+      partNumbers: ["04E905110K", "04E905110N"],
+    },
+  ],
+};
+
+const vehicleByPlate = {
+  [normalisePlate(seatLeonFitmentRecord.registration)]: seatLeonFitmentRecord,
+};
+
+const vehicleByVin = {
+  [normaliseVin(seatLeonFitmentRecord.vin)]: seatLeonFitmentRecord,
+};
+
+const getStoredSelectedListing = () => {
+  try {
+    return JSON.parse(sessionStorage.getItem(selectedListingStorageKey) || "null");
+  } catch {
+    return null;
+  }
+};
+
+const getListingIdFromUrl = () => new URLSearchParams(window.location.search).get("id");
+
+const formatListingDate = (postedAt) => {
+  if (!postedAt) return "Saved listing";
+
+  return new Date(postedAt).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
+const renderSpecItems = (items) =>
+  items
+    .filter((item) => item.value)
+    .map(
+      (item) => `
+        <div class="detail-spec">
+          <span>${escapeHtml(item.label)}</span>
+          <strong>${escapeHtml(item.value)}</strong>
+        </div>
+      `
+    )
+    .join("");
+
+const buildListingDescription = (listing) => {
+  const vehicle = [listing.make, listing.model, listing.year].filter(Boolean).join(" ");
+  const part = listing.partType || listing.category || "part";
+  const condition = listing.condition ? `${listing.condition.toLowerCase()} ` : "";
+  const side = listing.side ? `${listing.side.toLowerCase()} side ` : "";
+  const location = listing.location ? ` Located in ${listing.location}.` : "";
+  const partNumber = listing.partNumber ? ` OEM/reference part number: ${listing.partNumber}.` : "";
+
+  return `This ${condition}${side}${part} is listed for ${vehicle || "a compatible vehicle"}.${partNumber}${location}`;
+};
+
+const renderListingDetail = (listing) => {
+  if (!listingDetail || !listing) return;
+
+  activeListingDetail = listing;
+  document.title = `${listing.title || "Listing"} | AutoReviver`;
+
+  if (listingDetailTitle) listingDetailTitle.textContent = listing.title || "Part listing";
+  if (listingDetailSubtitle) {
+    listingDetailSubtitle.textContent = [
+      [listing.make, listing.model].filter(Boolean).join(" "),
+      listing.year,
+      listing.condition,
+      listing.location,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+  }
+
+  if (listingDetailImage) {
+    listingDetailImage.src = listing.imageUrl || fallbackListingImage;
+    listingDetailImage.alt = listing.title || "Vehicle part listing image";
+  }
+
+  if (listingDetailDescription) {
+    listingDetailDescription.textContent = listing.matchReason || buildListingDescription(listing);
+  }
+
+  if (listingDetailSpecs) {
+    listingDetailSpecs.innerHTML = renderSpecItems([
+      { label: "Vehicle", value: [listing.make, listing.model].filter(Boolean).join(" ") },
+      { label: "Year", value: listing.year },
+      { label: "Part type", value: listing.partType || listing.category },
+      { label: "Part number", value: listing.partNumber },
+      { label: "Side", value: listing.side },
+      { label: "Colour", value: listing.colour },
+      { label: "Engine", value: listing.engineSize },
+      { label: "Condition", value: listing.condition },
+      { label: "Location", value: listing.location },
+      { label: "Listed", value: formatListingDate(listing.postedAt) },
+    ]);
+  }
+
+  listingDetail.hidden = false;
+  if (listingError) listingError.hidden = true;
+};
+
+const fetchListingDetail = async (id) => {
+  const response = await fetch(`/api/listings/${encodeURIComponent(id)}`);
+  const json = await response.json();
+
+  if (!response.ok || !json.success) {
+    throw new Error(json.error || "Listing not found");
+  }
+
+  return json.data;
+};
+
+const loadListingDetail = async () => {
+  if (!listingDetail) return;
+
+  const listingId = getListingIdFromUrl();
+  const storedListing = getStoredSelectedListing();
+
+  try {
+    if (storedListing && String(storedListing.id) === String(listingId)) {
+      renderListingDetail(storedListing);
+      return;
+    }
+
+    if (!listingId) {
+      throw new Error("Missing listing id");
+    }
+
+    renderListingDetail(await fetchListingDetail(listingId));
+  } catch {
+    if (listingDetailTitle) listingDetailTitle.textContent = "Listing unavailable";
+    if (listingDetailSubtitle) listingDetailSubtitle.textContent = "The saved part could not be loaded.";
+    if (listingError) listingError.hidden = false;
+  }
+};
+
+const valuesMatch = (left, right) => {
+  const normalisedLeft = normaliseSearchValue(left);
+  const normalisedRight = normaliseSearchValue(right);
+
+  return Boolean(
+    normalisedLeft &&
+      normalisedRight &&
+      (normalisedLeft.includes(normalisedRight) || normalisedRight.includes(normalisedLeft))
+  );
+};
+
+const listingPartText = (listing = {}) =>
+  normaliseSearchValue([listing.title, listing.partType, listing.category, listing.side].filter(Boolean).join(" "));
+
+const fittedPartMatchesListingText = (fittedPart, listing = {}) => {
+  const text = listingPartText(listing);
+
+  if (!text) return false;
+
+  return [fittedPart.name, fittedPart.partType, fittedPart.category, fittedPart.side]
+    .filter(Boolean)
+    .some((value) => {
+      const normalisedValue = normaliseSearchValue(value);
+      return normalisedValue && (text.includes(normalisedValue) || normalisedValue.includes(text));
+    });
+};
+
+const findFittedPartByNumber = (vehicle, partNumber) => {
+  const normalisedListingPartNumber = normalisePartNumber(partNumber);
+
+  if (!normalisedListingPartNumber) return null;
+
+  return vehicle.fittedParts.find((fittedPart) =>
+    fittedPart.partNumbers.some((fittedPartNumber) => normalisePartNumber(fittedPartNumber) === normalisedListingPartNumber)
+  );
+};
+
+const findFittedPartsByListingText = (vehicle, listing) =>
+  vehicle.fittedParts.filter((fittedPart) => fittedPartMatchesListingText(fittedPart, listing));
+
+const assessCompatibility = (listing, vehicle) => {
+  const passes = [];
+  const warnings = [];
+  const failures = [];
+  const partNumberMatch = findFittedPartByNumber(vehicle, listing.partNumber);
+  const fittedPartTextMatches = findFittedPartsByListingText(vehicle, listing);
+
+  if (valuesMatch(listing.make, vehicle.make)) {
+    passes.push("Manufacturer matches the vehicle record.");
+  } else if (listing.make) {
+    failures.push(`Listing is for ${listing.make}, but the vehicle record is ${vehicle.make}.`);
+  } else {
+    warnings.push("Seller did not provide a manufacturer.");
+  }
+
+  if (valuesMatch(listing.model, vehicle.model)) {
+    passes.push("Model line matches Seat Leon.");
+  } else if (listing.model) {
+    failures.push(`Listing model is ${listing.model}, not ${vehicle.model}.`);
+  } else {
+    warnings.push("Seller did not provide a model.");
+  }
+
+  if (listing.year && String(listing.year).includes(vehicle.year)) {
+    passes.push("Model year matches 2015.");
+  } else if (listing.year) {
+    warnings.push(`Listing year is ${listing.year}; confirm the part fits a 2015 car.`);
+  } else {
+    warnings.push("Seller did not provide year coverage.");
+  }
+
+  if (valuesMatch(listing.engineSize, vehicle.engineSize) || valuesMatch(listing.engineSize, vehicle.engine)) {
+    passes.push("Engine detail matches 1.2 TSI.");
+  } else if (listing.engineSize) {
+    warnings.push(`Listing engine is ${listing.engineSize}; compare it with ${vehicle.engine}.`);
+  } else {
+    warnings.push("No engine size is listed, so engine-specific fitment needs confirmation.");
+  }
+
+  if (listing.partNumber) {
+    if (partNumberMatch) {
+      passes.push(`Part number ${listing.partNumber} appears in the VIN fitted-parts list for ${partNumberMatch.name}.`);
+    } else {
+      failures.push(`Part number ${listing.partNumber} was not found in the VIN fitted-parts list.`);
+    }
+  } else if (fittedPartTextMatches.length) {
+    const fittedPartNames = fittedPartTextMatches.map((part) => part.name).join(", ");
+    passes.push(`No listing part number was provided, but the part type matches fitted item: ${fittedPartNames}.`);
+    warnings.push("Ask the seller for the stamped OE/reference number before buying.");
+  } else {
+    warnings.push("No listing part number was provided and the part type could not be matched to the fitted-parts list.");
+  }
+
+  if (listing.colour && valuesMatch(listing.colour, vehicle.colour)) {
+    passes.push("Colour matches the silver vehicle record.");
+  } else if (listing.colour) {
+    warnings.push(`Listing colour is ${listing.colour}; the vehicle record is ${vehicle.colour}.`);
+  }
+
+  const status = failures.length
+    ? "Not compatible"
+    : partNumberMatch || passes.length >= 4
+      ? "Likely compatible"
+      : "Needs confirmation";
+
+  return { status, passes, warnings, failures };
+};
+
+const renderCompatibilityResult = ({ vehicle, assessment }) => {
+  const groups = [
+    ...assessment.failures.map((item) => ["Issue", item]),
+    ...assessment.passes.map((item) => ["Match", item]),
+    ...assessment.warnings.map((item) => ["Check", item]),
+  ];
+
+  compatibilityResult.innerHTML = `
+    <div class="compatibility-status compatibility-status-${assessment.status.toLowerCase().replace(/\s+/g, "-")}">
+      <span>${escapeHtml(assessment.status)}</span>
+      <strong>${escapeHtml(vehicle.registration)} | ${escapeHtml(vehicle.make)} ${escapeHtml(vehicle.model)} ${escapeHtml(vehicle.engine)}</strong>
+    </div>
+    <div class="vehicle-data-grid">
+      ${renderSpecItems([
+        { label: "VIN", value: vehicle.vin },
+        { label: "Year", value: vehicle.year },
+        { label: "Generation", value: vehicle.generation },
+        { label: "Colour", value: vehicle.colour },
+        { label: "Fuel", value: vehicle.fuel },
+        { label: "Body", value: vehicle.body },
+      ])}
+    </div>
+    <ul class="compatibility-notes">
+      ${groups.map(([label, text]) => `<li><strong>${escapeHtml(label)}:</strong> ${escapeHtml(text)}</li>`).join("")}
+    </ul>
+  `;
+};
+
+const findVehicleRecord = ({ plate, vin }) =>
+  vehicleByVin[normaliseVin(vin)] || vehicleByPlate[normalisePlate(plate)] || null;
+
+const checkCompatibility = ({ plate, vin }) => {
+  if (!compatibilityResult) return;
+
+  const vehicle = findVehicleRecord({ plate, vin });
+
+  if (!vehicle) {
+    compatibilityResult.innerHTML = `
+      <div class="compatibility-status compatibility-status-needs-confirmation">
+        <span>Vehicle not found</span>
+        <strong>Enter LN65 EWD or VIN VSSZZZKL1RR090386 to check the Seat Leon fitted-parts record.</strong>
+      </div>
+    `;
+    return;
+  }
+
+  renderCompatibilityResult({
+    vehicle,
+    assessment: assessCompatibility(activeListingDetail || {}, vehicle),
+  });
+};
+
 const initialiseStaticResultPage = () => {
   if (!resultForm || !reviewedParts || getListingDraft()) return;
 
@@ -803,9 +1195,19 @@ const sortListings = (listings, sortBy) => {
   return sortedListings;
 };
 
+const openListingDetail = (listingId) => {
+  const listing = availablePartListings.find((item) => String(item.id) === String(listingId));
+
+  if (listing) {
+    sessionStorage.setItem(selectedListingStorageKey, JSON.stringify(listing));
+  }
+
+  window.location.href = `listing.html?id=${encodeURIComponent(listingId)}`;
+};
+
 const renderListingCard = (listing) => `
-  <article class="listing-card" data-listing-id="${escapeHtml(listing.id)}">
-    <img class="listing-image" src="${escapeHtml(listing.imageUrl || "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=520&q=80")}" alt="${escapeHtml(listing.title)}" />
+  <article class="listing-card" data-listing-id="${escapeHtml(listing.id)}" role="link" tabindex="0" aria-label="View ${escapeHtml(listing.title)}">
+    <img class="listing-image" src="${escapeHtml(listing.imageUrl || fallbackListingImage)}" alt="${escapeHtml(listing.title)}" />
     <div class="listing-content">
       <div class="listing-meta">
         ${[listing.condition, listing.year, listing.location].filter(Boolean).map((item) => `<span>${escapeHtml(item)}</span>`).join("")}
@@ -833,7 +1235,7 @@ const renderListingCard = (listing) => `
           : ""
       }
       <span>${escapeHtml(listing.postedAt ? new Date(listing.postedAt).toLocaleDateString("en-GB") : "Saved listing")}</span>
-      <button class="row-action" type="button">View listing</button>
+      <button class="row-action" type="button" data-view-listing>View listing</button>
     </div>
   </article>
 `;
@@ -1013,6 +1415,25 @@ if (searchResultsForm) {
     event.preventDefault();
     renderSearchResults();
   });
+
+  listingResults.addEventListener("click", (event) => {
+    const card = event.target.closest(".listing-card");
+
+    if (!card) return;
+
+    openListingDetail(card.dataset.listingId);
+  });
+
+  listingResults.addEventListener("keydown", (event) => {
+    if (!["Enter", " "].includes(event.key)) return;
+
+    const card = event.target.closest(".listing-card");
+
+    if (!card) return;
+
+    event.preventDefault();
+    openListingDetail(card.dataset.listingId);
+  });
 }
 
 if (clearSearchFiltersButton && searchResultsForm) {
@@ -1027,6 +1448,32 @@ if (clearSearchFiltersButton && searchResultsForm) {
     searchResultsForm.elements.sortBy.value = "bestMatch";
     renderSearchResults();
   });
+}
+
+if (listingDetail) {
+  loadListingDetail();
+}
+
+if (compatibilityForm) {
+  compatibilityForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const formData = new FormData(compatibilityForm);
+    checkCompatibility({
+      plate: formData.get("plate"),
+      vin: formData.get("vin"),
+    });
+  });
+
+  if (plateInput) {
+    plateInput.value = "LN65 EWD";
+    plateInput.addEventListener("blur", () => {
+      plateInput.value = formatPlateDisplay(plateInput.value);
+    });
+  }
+
+  if (vinInput) {
+    vinInput.value = "";
+  }
 }
 
 const wait = (milliseconds) =>

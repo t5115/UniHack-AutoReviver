@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Listing | AutoReviver</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="navbar" aria-label="Main navigation">
+        <a class="brand" href="/" aria-label="AutoReviver homepage">
+          <span class="brand-mark">A</span>
+          <span>AutoReviver</span>
+        </a>
+        <div class="nav-actions">
+          <a class="nav-login" href="search-results.html">Back to listings</a>
+        </div>
+      </nav>
+    </header>
+
+    <main class="result-page listing-detail-page">
+      <section class="result-shell" aria-labelledby="listing-detail-title">
+        <div class="result-heading listing-detail-heading">
+          <div>
+            <p class="eyebrow">Part listing</p>
+            <h1 id="listing-detail-title" data-listing-title>Loading listing...</h1>
+            <p data-listing-subtitle>Checking saved listing details.</p>
+          </div>
+        </div>
+
+        <div class="listing-detail-layout" data-listing-detail hidden>
+          <article class="listing-detail-main">
+            <figure class="listing-detail-photo">
+              <img
+                data-listing-image
+                src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?auto=format&fit=crop&w=1200&q=80"
+                alt=""
+              />
+            </figure>
+
+            <section class="listing-detail-section" aria-labelledby="listing-description-title">
+              <div class="section-heading">
+                <div>
+                  <h2 id="listing-description-title">Description</h2>
+                  <p data-listing-description>Listing details will appear here.</p>
+                </div>
+              </div>
+              <div class="detail-spec-grid" data-listing-specs></div>
+            </section>
+          </article>
+
+          <aside class="compatibility-panel" aria-labelledby="compatibility-title">
+            <div class="section-heading">
+              <div>
+                <h2 id="compatibility-title">Check fitment</h2>
+                <p>Enter a registration or VIN to compare vehicle data against this listing.</p>
+              </div>
+            </div>
+
+            <form class="compatibility-form" data-compatibility-form>
+              <label class="field">
+                <span>Plate number</span>
+                <input
+                  type="text"
+                  name="plate"
+                  placeholder="e.g. LN65 EWD"
+                  autocomplete="off"
+                  data-plate-input
+                />
+              </label>
+              <label class="field">
+                <span>VIN</span>
+                <input
+                  type="text"
+                  name="vin"
+                  placeholder="e.g. VSSZZZKL1RR090386"
+                  autocomplete="off"
+                  data-vin-input
+                />
+              </label>
+              <button class="button button-primary" type="submit">Check compatibility</button>
+            </form>
+
+            <div class="compatibility-result" data-compatibility-result>
+              <p>Use <strong>LN65 EWD</strong> or VIN <strong>VSSZZZKL1RR090386</strong> to check this part against the Seat Leon fitted-parts record.</p>
+            </div>
+          </aside>
+        </div>
+
+        <p class="empty-results" data-listing-error hidden>
+          We could not load this listing. Go back to listings and try another part.
+        </p>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
