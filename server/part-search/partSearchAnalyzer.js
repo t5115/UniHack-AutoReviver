@@ -34,6 +34,107 @@ const tokenize = (value) =>
     .split(/\s+/)
     .filter((token) => token.length >= 2);
 
+const partText = (...values) => normaliseText(values.filter(Boolean).join(" "));
+
+const getPartFamily = (...values) => {
+  const text = partText(...values);
+
+  if (!text) return null;
+  if (/\bfog\b/.test(text) && /\b(covers?|trims?|bezels?|grilles?|grills?|surrounds?|blanks?)\b/.test(text)) return "fog_light_cover";
+  if (/\bfog\b/.test(text) && /\b(lights?|lamps?)\b/.test(text)) return "fog_light";
+  if (/\b(headlights?|headlamps?|head lights?)\b/.test(text)) return "headlight";
+  if (/\b(tail lights?|taillights?|rear lights?|tail lamps?|taillamps?)\b/.test(text)) return "tail_light";
+  if (/\b(indicators?|turn signals?|side repeaters?)\b/.test(text)) return "indicator";
+  if (/\bbrake\b/.test(text) && /\b(disc|discs|rotor|rotors)\b/.test(text)) return "brake_disc";
+  if (/\b(covers?|trims?|bezels?|grilles?|grills?|surrounds?|blanks?)\b/.test(text)) return "cover_trim";
+
+  return null;
+};
+
+const getSearchPartFamily = ({ searchInput = {}, aiResult = {} } = {}) =>
+  getPartFamily(
+    aiResult?.search_intent?.part_type,
+    aiResult?.search_intent?.summary,
+    searchInput.part_description,
+    searchInput.part
+  );
+
+const getWrittenPartFamily = (searchInput = {}) => getPartFamily(searchInput.part_description, searchInput.part);
+
+const getVisiblePartFamilies = (aiResult = {}) => {
+  const visiblePartTypes = Array.isArray(aiResult?.search_intent?.visible_part_types)
+    ? aiResult.search_intent.visible_part_types
+    : [];
+  const families = visiblePartTypes.map((partType) => getPartFamily(partType)).filter(Boolean);
+
+  return [...new Set(families)];
+};
+
+const isBroadVisualSearch = ({ searchInput = {}, aiResult = {}, hasImage = false } = {}) => {
+  if (!hasImage || getWrittenPartFamily(searchInput)) return false;
+
+  const partFocus = normaliseText(aiResult?.search_intent?.part_focus);
+  const visibleFamilies = getVisiblePartFamilies(aiResult);
+
+  return partFocus === "broad" || visibleFamilies.length > 1;
+};
+
+const getEffectiveSearchFamily = ({ searchInput = {}, aiResult = {}, hasImage = false } = {}) => {
+  if (isBroadVisualSearch({ searchInput, aiResult, hasImage })) return null;
+
+  return getSearchPartFamily({ searchInput, aiResult });
+};
+
+const getListingPartFamily = (listing = {}) =>
+  getPartFamily(listing.partType, listing.part_type, listing.title, listing.category);
+
+const arePartFamiliesCompatible = (searchFamily, listingFamily) => {
+  if (!searchFamily || !listingFamily) return true;
+  if (searchFamily === listingFamily) return true;
+
+  const compatibleFamilies = {
+    fog_light_cover: new Set(["fog_light"]),
+    fog_light: new Set(["fog_light_cover"]),
+    cover_trim: new Set(["fog_light_cover"]),
+  };
+
+  return compatibleFamilies[searchFamily]?.has(listingFamily) || false;
+};
+
+const capSubstituteRating = (rating, searchFamily, listingFamily) => {
+  if (!searchFamily || !listingFamily || searchFamily === listingFamily) return rating;
+
+  if (searchFamily === "fog_light_cover" && listingFamily === "fog_light") {
+    return Math.min(rating, 74);
+  }
+
+  if (searchFamily === "fog_light" && listingFamily === "fog_light_cover") {
+    return Math.min(rating, 64);
+  }
+
+  return rating;
+};
+
+const textMatchesWhenPresent = (expected, actual) => {
+  const expectedText = normaliseText(expected);
+  const actualText = normaliseText(actual);
+
+  return !expectedText || !actualText || expectedText.includes(actualText) || actualText.includes(expectedText);
+};
+
+const listingMatchesIntentVehicle = (listing = {}, intent = {}) =>
+  textMatchesWhenPresent(intent.make, listing.make) && textMatchesWhenPresent(intent.model, listing.model);
+
+const getBroadSupplementalRating = (listing, aiResult) => {
+  const intent = aiResult?.search_intent || {};
+  const hasVehicleMatch = Boolean(
+    (intent.make && normaliseText(listing.make).includes(normaliseText(intent.make))) ||
+      (intent.model && normaliseText(listing.model).includes(normaliseText(intent.model)))
+  );
+
+  return hasVehicleMatch ? 58 : 42;
+};
+
 const compactListing = (listing) => ({
   id: listing.id,
   title: listing.title,
@@ -155,7 +256,10 @@ const getPrefilteredCandidates = (listings, searchInput, { hasImage = false } = 
   return (likelyMatches.length ? likelyMatches : scoredListings).slice(0, MAX_AI_CANDIDATES);
 };
 
-const mergeAiMatches = ({ listings, searchInput, aiResult }) => {
+const mergeAiMatches = ({ listings, searchInput, aiResult, hasImage = false }) => {
+  const searchFamily = getEffectiveSearchFamily({ searchInput, aiResult, hasImage });
+  const broadVisualSearch = isBroadVisualSearch({ searchInput, aiResult, hasImage });
+  const visibleFamilies = getVisiblePartFamilies(aiResult);
   const matchesById = new Map(
     (Array.isArray(aiResult?.matches) ? aiResult.matches : []).map((match) => [
       String(match.id),
@@ -169,9 +273,46 @@ const mergeAiMatches = ({ listings, searchInput, aiResult }) => {
   return listings
     .map((listing) => {
       const aiMatch = matchesById.get(String(listing.id));
-      return aiMatch ? { ...listing, ...aiMatch } : { ...listing, matchRating: 0, matchReason: "Not selected as a strong AI match." };
+      const listingFamily = getListingPartFamily(listing);
+
+      if (!aiMatch) {
+        if (
+          broadVisualSearch &&
+          visibleFamilies.includes(listingFamily) &&
+          listingMatchesIntentVehicle(listing, aiResult?.search_intent)
+        ) {
+          return {
+            ...listing,
+            matchRating: getBroadSupplementalRating(listing, aiResult),
+            matchReason: "Included because this part type is clearly visible in the uploaded vehicle photo.",
+          };
+        }
+
+        return { ...listing, matchRating: 0, matchReason: "Not selected as a strong AI match." };
+      }
+
+      if (!arePartFamiliesCompatible(searchFamily, listingFamily)) {
+        return {
+          ...listing,
+          matchRating: 0,
+          matchReason: `Filtered out because ${listing.partType || listing.category || "this listing"} is not the requested part family.`,
+        };
+      }
+
+      const matchRating = capSubstituteRating(aiMatch.matchRating, searchFamily, listingFamily);
+      const substituteReason =
+        matchRating < aiMatch.matchRating
+          ? " Exact part type was not available, so this substitute was capped below an exact match."
+          : "";
+
+      return {
+        ...listing,
+        ...aiMatch,
+        matchRating,
+        matchReason: `${aiMatch.matchReason}${substituteReason}`,
+      };
     })
-    .filter((listing) => listing.matchRating > 0)
+    .filter((listing) => listing.matchRating >= 35)
     .sort((a, b) => b.matchRating - a.matchRating || new Date(b.postedAt) - new Date(a.postedAt))
     .map((listing) => ({
       ...listing,
@@ -233,7 +374,7 @@ const rankListingsWithAi = async ({ searchInput, listings, imageBuffer, mimeType
 
     return {
       searchIntent: aiResult.search_intent || null,
-      listings: mergeAiMatches({ listings: candidates, searchInput, aiResult }),
+      listings: mergeAiMatches({ listings: candidates, searchInput, aiResult, hasImage }),
       usedAi: true,
     };
   } catch (error) {

@@ -1272,7 +1272,7 @@ const getSearchFiltersFromForm = () => {
   };
 };
 
-const listingMatchesFilters = (listing, filters) => {
+const listingMatchesFilters = (listing, filters, { useSemanticPartMatch = false } = {}) => {
   const searchableListingText = normaliseSearchValue(
     [
       listing.title,
@@ -1291,7 +1291,7 @@ const listingMatchesFilters = (listing, filters) => {
   );
   const searchTokens = normaliseSearchValue(filters.part).split(/\s+/).filter(Boolean);
 
-  if (searchTokens.some((token) => !searchableListingText.includes(token))) {
+  if (!useSemanticPartMatch && searchTokens.some((token) => !searchableListingText.includes(token))) {
     return false;
   }
 
@@ -1490,8 +1490,9 @@ const renderSearchResults = () => {
   if (!searchResultsForm || !listingResults) return;
 
   const filters = getSearchFiltersFromForm();
+  const useSemanticPartMatch = Boolean(aiSearchContext?.usedAi);
   const matchingListings = sortListings(
-    availablePartListings.filter((listing) => listingMatchesFilters(listing, filters)),
+    availablePartListings.filter((listing) => listingMatchesFilters(listing, filters, { useSemanticPartMatch })),
     filters.sortBy
   );
   const resultWord = matchingListings.length === 1 ? "result" : "results";
