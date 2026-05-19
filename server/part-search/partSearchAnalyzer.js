@@ -192,7 +192,7 @@ const rankListingsWithAi = async ({ searchInput, listings, imageBuffer, mimeType
     content.push({
       type: "input_image",
       image_url: `data:${mimeType};base64,${imageBuffer.toString("base64")}`,
-      detail: "low",
+      detail: process.env.OPENAI_IMAGE_DETAIL || "auto",
     });
   }
 

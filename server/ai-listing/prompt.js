@@ -21,9 +21,15 @@ ${engineSize ? `Engine size: ${engineSize}` : ""}
 ${location ? `Seller location: ${location}` : ""}
 
 Return only a valid JSON object with no extra text.
-Find all obvious and plausible sellable parts in the photo, not just the main one. Include separate rows for distinct parts such as headlights, mirrors, bumpers, wings, doors, wheels, grilles, trim pieces, lamps, alternators, engine parts, interior controls, and panels when visible.
+Find only clear, recognisable, sellable car parts in the photo. Include separate rows for distinct parts such as headlights, mirrors, bumpers, wings, doors, wheels, grilles, trim pieces, lamps, alternators, engine parts, interior controls, and panels when they are clearly visible.
+For photos with multiple possible parts, be selective: include the parts you can confidently identify as real car parts, and ignore blurry, cropped, hidden, tiny, generic, or ambiguous objects. Do not add a row just because something might be automotive.
+Only include a detected part when you are at least 70% confident about the part type. If you are below 70% confident, leave it out of detected_parts instead of guessing. If no clear car part is visible, return an empty detected_parts array and set unknown listing fields to null.
 Do not include price, notes, explanations, markdown, or prose outside the JSON.
-Do not invent make, model, year, side, or part number. Use seller-provided details only when they fit what is visible. Use null when uncertain.
+Do not invent make, model, year, side, part type, or part number. Use seller-provided details only when they fit what is visible. Use null when uncertain.
+Confidence should reflect identification certainty, not optimism. Use 90-100 only for obvious complete parts, 70-89 for clear but imperfect views, and leave the part out below 70.
+For side-specific parts, side means the vehicle's own left or right side, as if you are sitting in the driver's seat facing forward. Do not use the image's left/right edge as the part side.
+Headlight side check: first decide whether the photo shows the front of the vehicle/part or the rear/inside/back of the removed part. For a front-facing vehicle or front-facing headlight pair, the headlight on the viewer's left is the vehicle's right/offside headlight, and the headlight on the viewer's right is the vehicle's left/nearside headlight. If the lamp is photographed from the rear, upside down, mirrored, cropped too tightly, or by itself without enough orientation clues, set side to null unless a visible marking, mounting shape, beam pattern, or seller text clearly proves the side.
+For UK vehicles, nearside usually means left/passenger side and offside usually means right/driver side. Only use these terms or convert them to left/right when the vehicle orientation is clear.
 For each detected part, include a bounding_box when you can localise it in the image. Use percentage coordinates relative to the full image: x and y are the top-left corner, width and height are the box size, all from 0 to 100. Keep the box tight around the visible part, with a little context. Use null if the part cannot be localised.
 Keep titles concise and marketplace-ready. A good title format is: Make Model year/range side part type key variant.
 Use UK terms such as bonnet, boot lid, wing, number plate light, nearside/offside only if you are confident. Otherwise use left/right/front/rear.

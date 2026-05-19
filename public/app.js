@@ -31,6 +31,12 @@ const uploadedPreview = document.querySelector("[data-uploaded-preview]");
 const uploadedCount = document.querySelector("[data-uploaded-count]");
 const photoMeta = document.querySelector("[data-photo-meta]");
 const resultStatus = document.querySelector("[data-result-status]");
+const listingQualityReport = document.querySelector("[data-listing-quality-report]");
+const qualityScore = document.querySelector("[data-quality-score]");
+const qualityLabel = document.querySelector("[data-quality-label]");
+const qualityMeter = document.querySelector("[data-quality-meter]");
+const qualitySummary = document.querySelector("[data-quality-summary]");
+const qualityChecks = document.querySelector("[data-quality-checks]");
 const listingDraftStorageKey = "autoreviverListingDraft";
 const pendingListingStorageKey = "autoreviverPendingListing";
 const pendingSearchStorageKey = "autoreviverPendingSearch";
@@ -494,6 +500,14 @@ const getListingDraft = () => {
 };
 
 const getDraftListing = (draft) => draft?.data?.listing_draft || draft?.data || {};
+const minClearAiPartConfidence = 70;
+const isSpecificAiPartName = (value) => {
+  const name = String(value || "").trim().toLowerCase();
+  return Boolean(name) && !["part", "car part", "vehicle part", "unknown", "unknown part", "automotive part"].includes(name);
+};
+
+const isClearAiPart = (part = {}) =>
+  Number(part.confidence) >= minClearAiPartConfidence && (isSpecificAiPartName(part.part_type) || isSpecificAiPartName(part.title));
 
 const getDraftParts = (draft) => {
   const detectedParts = draft?.data?.detected_parts;
@@ -511,27 +525,25 @@ const getDraftParts = (draft) => {
       engine_size: source["engine-size"],
       location: listing.location,
       ...part,
-    }));
+    })).filter(isClearAiPart);
   }
 
-  if (!Object.keys(listing).length) return [];
+  const fallbackPart = {
+    title: listing.title,
+    part_type: draft?.data?.part_type,
+    part_category: draft?.data?.part_category,
+    make: listing.make,
+    model: listing.model,
+    year: listing.year,
+    condition: listing.condition,
+    colour: source.colour,
+    engine_size: source["engine-size"],
+    location: listing.location,
+    part_number: draft?.data?.part_number,
+    confidence: draft?.data?.confidence,
+  };
 
-  return [
-    {
-      title: listing.title,
-      part_type: draft?.data?.part_type,
-      part_category: draft?.data?.part_category,
-      make: listing.make,
-      model: listing.model,
-      year: listing.year,
-      condition: listing.condition,
-      colour: source.colour,
-      engine_size: source["engine-size"],
-      location: listing.location,
-      part_number: draft?.data?.part_number,
-      confidence: draft?.data?.confidence,
-    },
-  ];
+  return isClearAiPart(fallbackPart) ? [fallbackPart] : [];
 };
 
 const setResultFieldValue = (name, value) => {
@@ -552,6 +564,129 @@ const fillResultForm = (part = {}) => {
   setResultFieldValue("colour", part.colour);
   setResultFieldValue("engineSize", part.engine_size || part.engineSize);
   setResultFieldValue("location", part.location);
+  updateListingQualityReport();
+};
+
+const getResultFieldValue = (name) => String(resultForm?.elements[name]?.value || "").trim();
+
+const scoreListingQuality = () => {
+  const fields = {
+    title: getResultFieldValue("title"),
+    make: getResultFieldValue("make"),
+    model: getResultFieldValue("model"),
+    year: getResultFieldValue("year"),
+    condition: getResultFieldValue("condition"),
+    partNumber: getResultFieldValue("partNumber"),
+    category: getResultFieldValue("category"),
+    side: getResultFieldValue("side"),
+    colour: getResultFieldValue("colour"),
+    engineSize: getResultFieldValue("engineSize"),
+    location: getResultFieldValue("location"),
+  };
+  const checks = [
+    {
+      label: "Clear title",
+      weight: 18,
+      complete: fields.title.length >= 14,
+      advice: "Make the title include vehicle, part and position, such as Seat Leon front right headlight.",
+    },
+    {
+      label: "Vehicle identity",
+      weight: 18,
+      complete: Boolean(fields.make && fields.model && fields.year),
+      advice: "Add make, model and year so buyers and search filters can match the listing.",
+    },
+    {
+      label: "Part classification",
+      weight: 14,
+      complete: Boolean(fields.category || getResultFieldValue("partType")),
+      advice: "Add a category or part type to help the listing appear in the right searches.",
+    },
+    {
+      label: "Condition detail",
+      weight: 14,
+      complete: fields.condition.length >= 8,
+      advice: "Describe condition clearly, including scratches, broken tabs or tested status.",
+    },
+    {
+      label: "OE part number",
+      weight: 16,
+      complete: fields.partNumber.length >= 5,
+      advice: "Add the stamped OE/reference number for stronger compatibility matching.",
+    },
+    {
+      label: "Fitment detail",
+      weight: 10,
+      complete: Boolean(fields.side || fields.engineSize || fields.colour),
+      advice: "Add side, engine size or colour where relevant to avoid buyer uncertainty.",
+    },
+    {
+      label: "Location",
+      weight: 10,
+      complete: Boolean(fields.location),
+      advice: "Add a location so local buyers can compare collection or delivery options.",
+    },
+  ];
+  const score = checks.reduce((total, check) => total + (check.complete ? check.weight : 0), 0);
+
+  return { score, checks };
+};
+
+const getListingQualityMessage = (score) => {
+  if (score >= 86) {
+    return {
+      label: "Excellent post",
+      summary: "This listing has strong discovery signals and enough fitment detail to give buyers confidence.",
+    };
+  }
+
+  if (score >= 68) {
+    return {
+      label: "Good post",
+      summary: "Good post. Adding a few more details could improve discovery and increase the potential for a sale.",
+    };
+  }
+
+  if (score >= 42) {
+    return {
+      label: "Promising post",
+      summary: "This is usable, but missing fitment details may make buyers hesitate or filter it out.",
+    };
+  }
+
+  return {
+    label: "Needs details",
+    summary: "Complete the key fields to improve search visibility and buyer confidence.",
+  };
+};
+
+const updateListingQualityReport = () => {
+  if (!listingQualityReport || !resultForm) return;
+
+  const { score, checks } = scoreListingQuality();
+  const message = getListingQualityMessage(score);
+  const missingChecks = checks.filter((check) => !check.complete).slice(0, 3);
+
+  if (qualityScore) qualityScore.textContent = `${score}%`;
+  if (qualityLabel) qualityLabel.textContent = message.label;
+  if (qualityMeter) qualityMeter.style.width = `${score}%`;
+  if (qualitySummary) qualitySummary.textContent = message.summary;
+  if (qualityChecks) {
+    qualityChecks.innerHTML = checks
+      .map(
+        (check) => `
+          <div class="quality-check ${check.complete ? "is-complete" : ""}">
+            <span>${check.complete ? "Done" : "Improve"}</span>
+            <strong>${escapeHtml(check.label)}</strong>
+          </div>
+        `
+      )
+      .join("");
+  }
+
+  if (missingChecks.length && qualitySummary) {
+    qualitySummary.textContent = `${message.summary} Next: ${missingChecks.map((check) => check.advice).join(" ")}`;
+  }
 };
 
 const renderReviewedParts = (parts = []) => {
@@ -1107,6 +1242,10 @@ const initialiseStaticResultPage = () => {
 if (resultForm) {
   initialiseResultPage();
   initialiseStaticResultPage();
+  updateListingQualityReport();
+
+  resultForm.addEventListener("input", updateListingQualityReport);
+  resultForm.addEventListener("change", updateListingQualityReport);
 
   resultForm.addEventListener("submit", async (event) => {
     event.preventDefault();

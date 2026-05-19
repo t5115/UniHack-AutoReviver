@@ -2,6 +2,7 @@ const OpenAI = require("openai");
 const { buildPartListingPrompt } = require("./prompt");
 
 const DEFAULT_MODEL = "gpt-5.1";
+const MIN_CLEAR_PART_CONFIDENCE = 70;
 
 const extractJsonObject = (text) => {
   const cleanedText = String(text || "")
@@ -63,6 +64,20 @@ const normalisePart = (part = {}) => ({
   confidence: clampConfidence(part.confidence),
 });
 
+const normalisePartName = (value) => String(value || "").trim().toLowerCase();
+
+const isSpecificPartName = (value) => {
+  const name = normalisePartName(value);
+  if (!name) return false;
+
+  return !["part", "car part", "vehicle part", "unknown", "unknown part", "automotive part"].includes(name);
+};
+
+const isClearDetectedPart = (part) =>
+  Boolean(part) &&
+  part.confidence >= MIN_CLEAR_PART_CONFIDENCE &&
+  (isSpecificPartName(part.part_type) || isSpecificPartName(part.title));
+
 const normaliseAnalysis = (analysis) => {
   const listingDraft = analysis.listing_draft || {};
   const legacyDraft = {
@@ -75,28 +90,34 @@ const normaliseAnalysis = (analysis) => {
     category: analysis.part_category,
     location: analysis.location,
   };
-  const detectedParts = Array.isArray(analysis.detected_parts) ? analysis.detected_parts.map(normalisePart) : [];
+  const detectedParts = Array.isArray(analysis.detected_parts)
+    ? analysis.detected_parts.map(normalisePart).filter(isClearDetectedPart)
+    : [];
+  const legacyPart = normalisePart({ ...legacyDraft, ...analysis });
+  const fallbackParts = detectedParts.length ? detectedParts : isClearDetectedPart(legacyPart) ? [legacyPart] : [];
+  const primaryPart = fallbackParts[0] || {};
+  const hasClearPart = fallbackParts.length > 0;
 
   return {
     listing_draft: {
-      title: listingDraft.title || legacyDraft.title || null,
-      make: listingDraft.make || legacyDraft.make || null,
-      model: listingDraft.model || legacyDraft.model || null,
-      year: listingDraft.year || legacyDraft.year || null,
-      condition: listingDraft.condition || legacyDraft.condition || null,
-      part_number: listingDraft.part_number || legacyDraft.part_number || null,
-      category: listingDraft.category || legacyDraft.category || null,
+      title: hasClearPart ? listingDraft.title || primaryPart.title || legacyDraft.title || null : null,
+      make: hasClearPart ? listingDraft.make || legacyDraft.make || null : null,
+      model: hasClearPart ? listingDraft.model || legacyDraft.model || null : null,
+      year: hasClearPart ? listingDraft.year || legacyDraft.year || null : null,
+      condition: hasClearPart ? listingDraft.condition || legacyDraft.condition || null : null,
+      part_number: hasClearPart ? listingDraft.part_number || legacyDraft.part_number || null : null,
+      category: hasClearPart ? listingDraft.category || legacyDraft.category || null : null,
       location: listingDraft.location || legacyDraft.location || null,
     },
-    detected_parts: detectedParts.length ? detectedParts : [normalisePart({ ...legacyDraft, ...analysis })],
-    part_type: analysis.part_type || detectedParts[0]?.part_type || null,
-    part_category: analysis.part_category || listingDraft.category || detectedParts[0]?.part_category || null,
-    part_number: analysis.part_number || listingDraft.part_number || detectedParts[0]?.part_number || null,
-    side: analysis.side || detectedParts[0]?.side || null,
-    condition: analysis.condition || listingDraft.condition || detectedParts[0]?.condition || null,
-    title: analysis.title || listingDraft.title || detectedParts[0]?.title || null,
+    detected_parts: fallbackParts,
+    part_type: hasClearPart ? analysis.part_type || primaryPart.part_type || null : null,
+    part_category: hasClearPart ? analysis.part_category || listingDraft.category || primaryPart.part_category || null : null,
+    part_number: hasClearPart ? analysis.part_number || listingDraft.part_number || primaryPart.part_number || null : null,
+    side: hasClearPart ? analysis.side || primaryPart.side || null : null,
+    condition: hasClearPart ? analysis.condition || listingDraft.condition || primaryPart.condition || null : null,
+    title: hasClearPart ? analysis.title || listingDraft.title || primaryPart.title || null : null,
     suggested_vehicles: Array.isArray(analysis.suggested_vehicles) ? analysis.suggested_vehicles : [],
-    confidence: clampConfidence(analysis.confidence || detectedParts[0]?.confidence),
+    confidence: hasClearPart ? clampConfidence(analysis.confidence || primaryPart.confidence) : 0,
   };
 };
 
@@ -142,7 +163,7 @@ const analyzePartImage = async ({
           {
             type: "input_image",
             image_url: `data:${mimeType};base64,${imageBuffer.toString("base64")}`,
-            detail: "low",
+            detail: process.env.OPENAI_IMAGE_DETAIL || "auto",
           },
         ],
       },
