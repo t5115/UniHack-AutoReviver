@@ -1,5 +1,4 @@
 # Auto Reviver
-
 Auto Reviver is a hackathon project for making the used car parts marketplace faster, easier, and more efficient for both individual sellers and parts companies.
 
 The idea is simple: instead of manually writing every listing, identifying every part, and searching through listings one by one, Auto Reviver uses AI-assisted image analysis and matching to help users list and find used vehicle parts with less friction.
@@ -181,3 +180,6 @@ Known limitations:
 - Add company seller accounts and bulk upload workflows.
 - Improve AI confidence handling and human review tools.
 - Add production authentication, hosting, and persistent image storage.
+
+Live Site: (AI Features will be disabled)
+Showcase: (Soon)
